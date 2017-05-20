@@ -1,14 +1,164 @@
+<html>
+<head>
+  <title>tosettorise</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css?family=VT323');
+    body {
+      font-family: 'VT323', monospace;
+      text-align: center;
+      color: #3a5572 padding: 0;
+      margin: 0;
+      text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .outer {
+      display: table;
+      position: absolute;
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(to bottom, #e0ebec, #e0ebec);
+    }
+
+    .middle {
+      display: table-cell;
+      vertical-align: middle;
+    }
+
+    .inner {
+      margin-left: auto;
+      margin-right: auto;
+      width: /*whatever width you want*/
+    ;
+    }
+
+    .digits {
+      font-size: 8em;
+      line-height: 0.8em;
+    }
+
+    .tstr {
+      font-size: 2em;
+    }
+  </style>
+</head>
 <body>
-  <div class="outer">
-    <div class="middle">
-      <div class="inner">
-        <div class="digits">
-          <span class="clock-tstr-digits"></span>
-        </div>
-        <div class="tstr">
-          <span class="clock-tstr-tstr-full"></span> - <span class="clock-tstr-day"></span>
-        </div>
+<div class="outer">
+  <div class="middle">
+    <div class="inner">
+      <div class="digits">
+        <span class="clock-tstr-digits"></span>
+      </div>
+      <div class="tstr">
+        <span class="clock-tstr-tstr-full"></span> - <span class="clock-tstr-day"></span>
       </div>
     </div>
   </div>
+</div>
+<script>
+
+    function day_of_week_as_string(dayIndex) {
+        return ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"][dayIndex];
+    }
+
+    tstr_format_digits = function(num) {
+        var as_str = "" + num
+        var pad = "00"
+        var padded = pad.substring(0, pad.length - as_str.length) + as_str
+        return padded
+    }
+
+    tstr_now = function() {
+        var current = new Date();
+        var current_ms = current.getTime();
+        var current_day = current.getDate();
+        var current_month = current.getMonth();
+        var current_year = current.getFullYear();
+
+        var tstr = null;
+        var next_6_ms = null
+        var clock_day_index = null;
+
+        var today_6am = new Date(current_year, current_month, current_day, 6);
+        var today_6am_ms = today_6am.getTime();
+        var till_6am_ms = today_6am_ms - current_ms;
+        if (till_6am_ms >= 0) {
+            tstr = 'tr';
+            tstr_full = 'To Rise';
+            next_6_ms = today_6am_ms;
+            clock_day_index = today_6am.getDay();
+        } else {
+            var today_6pm = new Date(current_year, current_month, current_day, 18);
+            var today_6pm_ms = today_6pm.getTime();
+            var till_6pm_ms = today_6pm_ms - current_ms
+            if (till_6pm_ms >= 0) {
+                tstr = 'ts';
+                tstr_full = 'To Set';
+                next_6_ms = today_6pm_ms;
+                clock_day_index = today_6pm.getDay();
+            } else {
+                tstr = 'tr';
+                tstr_full = 'To Rise'
+                var sometime_tomorrow_ms = today_6pm_ms + 36000000 /* add 10 hours */
+                var sometime_tomorrow = new Date(sometime_tomorrow_ms);
+                var tomorrow_day = sometime_tomorrow.getDate();
+                var tomorrow_month = sometime_tomorrow.getMonth();
+                var tomorrow_year = sometime_tomorrow.getFullYear();
+                var tomorrow_6am = new Date(tomorrow_year, tomorrow_month, tomorrow_day, 6);
+                var tomorrow_6am_ms = tomorrow_6am.getTime()
+                next_6_ms = tomorrow_6am_ms
+                clock_day_index = tomorrow_6am.getDay()
+            }
+        }
+
+        var till_next_6_ms = next_6_ms - current_ms
+        var hours = Math.floor(till_next_6_ms / 3600000)
+        var ms_past_hour = till_next_6_ms % 3600000
+        var min_past_hour = Math.floor(ms_past_hour / 60000)
+        var ms_past_min = ms_past_hour % 60000
+        var sec_past_min = Math.floor(ms_past_min / 1000)
+
+        var clock_hours = tstr_format_digits(hours)
+        var clock_min = tstr_format_digits(min_past_hour)
+        var clock_sec = tstr_format_digits(sec_past_min)
+
+        return {
+            "day": clock_day_index,
+            "day_full": day_of_week_as_string(clock_day_index),
+            "tstr": tstr,
+            "tstr_full": tstr_full,
+            "hours": clock_hours,
+            "seconds": clock_sec,
+            "minutes": clock_min,
+            "digits": clock_hours + ":" + clock_min,
+            "digits_with_seconds":clock_hours + ":" + clock_min + ":" + clock_sec
+        };
+    }
+
+    update_clocks = function() {
+        var tstr_info = tstr_now();
+        var clocks = document.getElementsByClassName('clock-tstr-digits');
+        for (var clock_i in clocks) {
+            var clock = clocks[clock_i];
+            clock.innerHTML = tstr_info['digits'];
+        }
+        var clocks = document.getElementsByClassName('clock-tstr-tstr-full');
+        for (var clock_i in clocks) {
+            var clock = clocks[clock_i];
+            clock.innerHTML = tstr_info['tstr_full'];
+        }
+        var clocks = document.getElementsByClassName('clock-tstr-day');
+        for (var clock_i in clocks) {
+            var clock = clocks[clock_i];
+            clock.innerHTML = tstr_info['day_full'];
+        }
+    }
+
+    event_loop = function() {
+        update_clocks();
+    }
+
+    setInterval(event_loop, 16);
+
+</script>
 </body>
+</html>
